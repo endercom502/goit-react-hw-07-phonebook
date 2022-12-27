@@ -1,48 +1,49 @@
 import PropTypes from 'prop-types';
-import style from './ContactsList.module.css';
-import { getFilterValue, getContacts } from 'redux/selectors';
-import { useSelector, useDispatch } from 'react-redux';
-import { deleteContact } from 'redux/actions';
+import style from '../ContactsList/ContactsList.module.css';
+import { getFilterValue } from 'redux/selectors';
+import { useSelector } from 'react-redux';
+import { useContactsQuery, useDeleteContactMutation } from 'redux/services/contactsApi';
+import Loader from '../Loader/Loader';
 
 export const ContactList = () => {
-  
-  const contacts = useSelector(getContacts);
+  const { data, isLoading } = useContactsQuery();
+  const [deleteContact] = useDeleteContactMutation();
+
   const filterValue = useSelector(getFilterValue);
-  const dispatch = useDispatch();
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(filterValue)
-  );
+  if (isLoading) {
+    return <Loader/>;
+  }
 
-  const toDelete = idToDelete => {
-    return dispatch(deleteContact(idToDelete));
-  };
+  if (!data) {
+    return <div>No contacts</div>;
+  }
+
+const contactsFilter = data.filter(contact =>
+contact.name.toLowerCase().includes(filterValue.toLowerCase())
+) 
 
   return (
-    <div>
-      {filteredContacts.length > 0 ? (
-        <ul className={style.contactsList}>
-          
-          {filteredContacts.map(contact => {
-            
-            return (
-              <li className={style.contactsItem} key={contact.id}>
-                <span>{`${contact.name}: ${contact.number}`}</span>
-                <button
-                  type="button"
-                  className={style.contactBtn}
-                  onClick={() => toDelete(contact.id)}
-                >
-                  Delete
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div>There's no results</div>
-      )}
-    </div>
+    
+      <ul className={style.contactsList}>
+        {contactsFilter.map(({ id, name, phone, image }) => (
+          <li key={id} className={style.contactsItem}>
+            <img className={ style.contactImage}src={image} alt='avatar' width="80" height="80" /> 
+            <div className={style.wrapper}>
+              <span className={style.contactsName}>{`${name}`}</span><span className={style.contactsPhone}>{`${phone}`}</span>
+              
+            <button
+              type="button"
+              className={style.contactBtn}
+              onClick={() => deleteContact(id)}
+            >
+              Delete
+              </button>
+              </div>
+          </li>
+        ))}
+      </ul>
+    
   );
 };
 
